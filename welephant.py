@@ -8,6 +8,9 @@ from typing import Iterator
 import urllib.parse
 import sys
 import os
+import logging
+
+_LOGGER = logging.getLogger(__name__)
 
 
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
@@ -29,7 +32,7 @@ async def backup_database(backup_directory: pathlib.Path, database: str) -> None
         f"--dbname='{database}'",
     )
 
-    print(f"backing up {db_name} to {backup_file_path}")
+    _LOGGER.info(f"backing up {db_name} to {backup_file_path}")
 
     process = await asyncio.create_subprocess_exec(
         *backup_command,
@@ -39,7 +42,6 @@ async def backup_database(backup_directory: pathlib.Path, database: str) -> None
 
 
 async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> None:
-    print(databases)
     async with asyncio.TaskGroup() as tg:
         for database in databases:
             tg.create_task(backup_database(backup_directory, database))
@@ -58,6 +60,13 @@ def database_uri_from_env() -> Iterator[str]:
 
 async def _main() -> None:
     check_python_version()
+
+    logging.basicConfig(
+        stream=sys.stdout,
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(message)s",
+    )
+
     parser = argparse.ArgumentParser(
         prog="Welephant",
         description="CLI tool for periodically backing up mutliple PostgreSQL databases",
@@ -84,6 +93,8 @@ async def _main() -> None:
     if len(args.database) == 0:
         parser.print_help()
         sys.exit(0)
+
+    _LOGGER.info(f"Starting backup of {len(args.database)} database(s)")
 
     args.dumps_directory.mkdir(exist_ok=True)
 
