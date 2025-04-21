@@ -11,6 +11,7 @@ import os
 import logging
 
 _LOGGER = logging.getLogger(__name__)
+_SUCCESS_RETURN_CODE = 0
 
 
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
@@ -32,13 +33,18 @@ async def backup_database(backup_directory: pathlib.Path, database: str) -> None
         f"--dbname={database}",
     )
 
-    _LOGGER.info(f"backing up {db_name} to {backup_file_path}")
+    _LOGGER.info(f"backing up {db_name} to {backup_file_path.absolute()}")
 
     process = await asyncio.create_subprocess_exec(
         *backup_command,
     )
 
-    await process.wait()
+    return_code = await process.wait()
+
+    if return_code == _SUCCESS_RETURN_CODE:
+        _LOGGER.info(f"Successfully backed up {db_name}")
+    else:
+        _LOGGER.error(f"Backup of {db_name} exited with return code {return_code}")
 
 
 async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> None:
@@ -99,6 +105,8 @@ async def _main() -> None:
     args.dumps_directory.mkdir(exist_ok=True)
 
     await backup_databases(args.dumps_directory, *args.database)
+
+    _LOGGER.info("Finished backups")
 
 
 if __name__ == "__main__":
