@@ -13,9 +13,10 @@ import os
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
     parsed_db_uri = urllib.parse.urlparse(database)
 
+    db_name = parsed_db_uri.path.lstrip("/")
+
     backup_file_path = (
-        backup_directory
-        / f"{parsed_db_uri.path.lstrip('/')}_{datetime.date.today().isoweekday()}.sql.zst"
+        backup_directory / f"{db_name}_{datetime.date.today().isoweekday()}.sql.zst"
     )
     backup_command = (
         "/usr/bin/env",
@@ -25,10 +26,10 @@ async def backup_database(backup_directory: pathlib.Path, database: str) -> None
         "--create",
         "--compress=zstd:11",
         f"--file={backup_file_path}",
-        database,
+        f"--dbname='{database}'",
     )
 
-    print(f"backing up {database} to {backup_file_path}")
+    print(f"backing up {db_name} to {backup_file_path}")
 
     process = await asyncio.create_subprocess_exec(
         *backup_command,
