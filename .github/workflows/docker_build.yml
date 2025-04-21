@@ -3,7 +3,7 @@ name: Docker build
 on:
   push:
   schedule:
-    - cron: "@weekly"
+    - cron: "0 0 * * 3"
 
 jobs:
   docker:
