@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 
 import argparse
-import pathlib
 import asyncio
-import urllib.parse
 import datetime
+import pathlib
+import urllib.parse
 
 
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
@@ -40,15 +40,6 @@ async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> N
             tg.create_task(backup_database(backup_directory, database))
 
 
-async def periodically_backup_databases(
-    backup_interval: datetime.timedelta, backup_directory: pathlib.Path, *databases: str
-) -> None:
-    # TODO: signal handling
-    while True:
-        asyncio.create_task(backup_databases(backup_directory, *databases))
-        await asyncio.sleep(backup_interval.total_seconds())
-
-
 async def _main() -> None:
     parser = argparse.ArgumentParser(
         prog="Welephant",
@@ -68,26 +59,12 @@ async def _main() -> None:
         help="Database backup destination directory",
         dest="dumps_directory",
     )
-    parser.add_argument(
-        "-i",
-        "--backup-interval",
-        type=int,
-        help="Daily inteval at which to backup databases.",
-        dest="backup_interval",
-    )
 
     args = parser.parse_args()
 
     args.dumps_directory.mkdir(exist_ok=True)
 
-    if args.backup_interval:
-        await periodically_backup_databases(
-            datetime.timedelta(days=args.backup_interval),
-            args.dumps_directory,
-            *args.database,
-        )
-    else:
-        await backup_databases(args.dumps_directory, *args.database)
+    await backup_databases(args.dumps_directory, *args.database)
 
 
 if __name__ == "__main__":
