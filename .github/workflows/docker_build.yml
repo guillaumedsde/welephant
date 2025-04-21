@@ -20,7 +20,7 @@ jobs:
       - name: Build
         uses: docker/build-push-action@v6
         with:
-          tags: ${{ github.repository}}:latest
+          tags: ghcr.io/${{ github.repository}}:latest
           push: ${{ github.ref_name == github.event.repository.default_branch }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
