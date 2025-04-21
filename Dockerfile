@@ -1,12 +1,18 @@
-FROM python:3-alpine
-
+FROM python:3-alpine AS base
 RUN apk add --no-cache postgresql17-client
-
 COPY --chmod=755 welephant.py /
-
-USER nobody
 WORKDIR /data
 VOLUME [ "/data" ]
 
+FROM base AS welephant
+USER nobody
 ENTRYPOINT [ "/welephant.py" ]
-CMD [ "--dumps-directory=/data" ]
+
+FROM base AS cron
+RUN apk add --no-cache supercronic tzdata
+COPY --chmod=644 <<EOF /crontab
+28 14 * * * /welephant.py
+EOF
+USER nobody
+ENTRYPOINT [ "/usr/bin/supercronic"]
+CMD [ "/crontab" ]
