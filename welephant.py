@@ -29,7 +29,7 @@ async def backup_database(backup_directory: pathlib.Path, database: str) -> None
         "--create",
         "--compress=zstd:11",
         f"--file={backup_file_path}",
-        f"--dbname='{database}'",
+        f"--dbname={database}",
     )
 
     _LOGGER.info(f"backing up {db_name} to {backup_file_path}")
