@@ -1,32 +1,34 @@
 #!/usr/bin/env python
+
 import argparse
 import pathlib
 import asyncio
 import urllib.parse
 import datetime
 
-SUCCESS_RETURNCODE = 0
-
 
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
     parsed_db_uri = urllib.parse.urlparse(database)
     db_backup_date = datetime.date.today()
+
+    backup_file_path = (
+        backup_directory
+        / f"{db_backup_date.isoformat()}_{parsed_db_uri.path.lstrip('/')}.sql.zst"
+    )
     backup_command = (
+        "/usr/bin/env",
         "pg_dump",
         "--clean",
         "--if-exists",
         "--create",
         "--compress=zstd:11",
-        f"--file={db_backup_date.isoformat()}_{parsed_db_uri.path}.sql.zst",
+        f"--file={backup_file_path}",
         database,
     )
 
-    subprocess = await asyncio.create_subprocess_exec(*backup_command)
+    process = await asyncio.create_subprocess_exec(*backup_command)
 
-    stdout, stderr = await subprocess.communicate()
-
-    if subprocess.returncode != SUCCESS_RETURNCODE:
-        print(stderr)
+    await process.wait()
 
 
 async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> None:
