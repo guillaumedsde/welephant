@@ -4,8 +4,10 @@ import argparse
 import asyncio
 import datetime
 import pathlib
+from typing import Iterator
 import urllib.parse
 import sys
+import os
 
 
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
@@ -36,6 +38,7 @@ async def backup_database(backup_directory: pathlib.Path, database: str) -> None
 
 
 async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> None:
+    print(databases)
     async with asyncio.TaskGroup() as tg:
         for database in databases:
             tg.create_task(backup_database(backup_directory, database))
@@ -44,6 +47,12 @@ async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> N
 def check_python_version() -> None:
     if not (sys.version_info.major >= 3 and sys.version_info.minor >= 11):
         raise RuntimeError("welephant requires python >= 3.11")
+
+
+def database_uri_from_env() -> Iterator[str]:
+    for key, value in os.environ.items():
+        if key.startswith("WELEPHANT_URI_"):
+            yield value
 
 
 async def _main() -> None:
@@ -55,8 +64,9 @@ async def _main() -> None:
     parser.add_argument(
         "database",
         type=str,
-        nargs="+",
-        help="PostgreSQL connection URI of databasae to backup.",
+        nargs="*",
+        default=set(database_uri_from_env()),
+        help="PostgreSQL connection URI of database to backup.",
     )
     parser.add_argument(
         "-d",
@@ -68,6 +78,11 @@ async def _main() -> None:
     )
 
     args = parser.parse_args()
+
+    # FIXME: better handling when no argument is given (our env var fallback is hacky)
+    if len(args.database) == 0:
+        parser.print_help()
+        sys.exit(0)
 
     args.dumps_directory.mkdir(exist_ok=True)
 
