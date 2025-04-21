@@ -5,6 +5,7 @@ import asyncio
 import datetime
 import pathlib
 import urllib.parse
+import sys
 
 
 async def backup_database(backup_directory: pathlib.Path, database: str) -> None:
@@ -40,7 +41,13 @@ async def backup_databases(backup_directory: pathlib.Path, *databases: str) -> N
             tg.create_task(backup_database(backup_directory, database))
 
 
+def check_python_version() -> None:
+    if not (sys.version_info.major >= 3 and sys.version_info.minor >= 11):
+        raise RuntimeError("welephant requires python >= 3.11")
+
+
 async def _main() -> None:
+    check_python_version()
     parser = argparse.ArgumentParser(
         prog="Welephant",
         description="CLI tool for periodically backing up mutliple PostgreSQL databases",
