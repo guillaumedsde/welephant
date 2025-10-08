@@ -1,4 +1,4 @@
-FROM python:3.13-alpine3.21
+FROM python:3.14-alpine3.21
 
 RUN apk add --no-cache postgresql17-client supercronic tzdata
 COPY --chmod=755 welephant.py /
